@@ -18,22 +18,23 @@ class Ssd1306_pioled_displayPlugin(
         self.display = None
 
     def on_startup(self, *args, **kwargs):
-        self._logger.info('Prepare display')
+        self._logger.info('Initializing plugin')
         self.display = SSD1306(
             width=128,
             height=32,
-            refresh_rate=30,
+            refresh_rate=1,
             logger=self._logger
         )
         self.display.start()
         self.display.write_row(0, 'Offline')
         self.display.commit()
+        self._logger.info('Initialized.')
         # self._printer.register_callback(self)
 
     def on_shutdown(self):
-        self.display.stop()
         self.display.clear()
         self.display.commit()
+        self.display.stop()
         # self._printer.unregister_callback(self)
 
     # def on_event(self, event, payload):

@@ -2,6 +2,8 @@ import copy
 import threading
 from time import sleep
 
+from logging import DEBUG, INFO, WARN, ERROR
+
 import adafruit_ssd1306
 import busio
 from PIL import Image, ImageDraw, ImageFont
@@ -43,19 +45,27 @@ class SSD1306(threading.Thread):
             self._display = adafruit_ssd1306.SSD1306_I2C(
                 self._width, self._height, i2c)
         except:
-            self.log('Failed to initialize display')
+            self.log('Failed to initialize display', level=WARN)
 
     # Clear content.
-    def clear(self):
+    def clear_rows(self, start=0, end=None):
         """ Clear content """
-        for i in range(0, len(self._rows)):
-            self._rows[i] = ''
+        _start = start
+        _end = len(self._rows)-1 if end is None else end
+        if (_start in range(0, len(self._rows)) and _end in range(0, len(self._rows))):
+            for i in range(start, _end):
+                self._rows[i] = ''
+        else:
+            self.log('Indices out of range for clear_rows: [{}, {}] but should be in [{}, {}]'.format(
+                start, _end, 0, len(self._rows)-1))
 
     # Write content to row.
     def write_row(self, row, text):
         """ Write data to row """
         if (row < len(self._rows)):
             self._rows[row] = text
+        else:
+            self.log('Row index too large, {} > {}'.format(row, len(self._rows)), level=WARN)
 
     def commit(self):
         """ Send data to be shown on the display. """
@@ -80,16 +90,25 @@ class SSD1306(threading.Thread):
                 # Show
                 self._display.show()
             except:
-                self.log('Failed to send to display')
+                self.log('Failed to send to display', level=WARN)
             sleep(1/self._refresh_rate)
 
     def stop(self):
-        """ Stop thread when done with current iteration. """
+        """ Shutdown. Stop thread and empty screen. """
         self._stop = True
+        self.clear_rows()
+        try:
+            self._display.fill(0)
+            self._display.show()
+        except:
+            self.log('Failed to clear display')
 
-    def log(self, message):
-        """ Log message """
+    def log(self, message, level=INFO):
+        """ Log message. Can optionally set level."""
         if self._logger != None:
-            self._logger.info(message)
+            if (level is WARN):
+                self._logger.warn(message)
+            else:
+                self._logger.info(message)
         else:
             print(message)
