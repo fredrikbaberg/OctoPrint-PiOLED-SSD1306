@@ -19,15 +19,21 @@ class Ssd1306_pioled_displayPlugin(
 
     def on_after_startup(self, *args, **kwargs):
         self._logger.info('Prepare display')
-        self.display = SSD1306()
+        self.display = SSD1306(
+            width=128,
+            height=32,
+            refresh_rate=120,
+        )
         self.display.write_row(0, 'Offline')
+        self.display.commit()
         self.display.start()
         # self._printer.register_callback(self)
 
     def on_shutdown(self):
         self.display.stop()
-        # self._printer.unregister_callback(self)
         self.display.clear()
+        self.display.commit()
+        # self._printer.unregister_callback(self)
 
     # def on_event(self, event, payload):
     #     if(event == Events.PRINTER_STATE_CHANGED):
@@ -42,7 +48,7 @@ class Ssd1306_pioled_displayPlugin(
     def handle_connect_hook(self, *args, **kwargs):
         self._logger.info('handle_connect')
         self.display.write_row(0, 'Connecting')
-        self._logger.warn('Loop nr: {}'.format(self.display.loop_nr))
+        self.display.commit()
 
     # ~~ Softwareupdate hook
 

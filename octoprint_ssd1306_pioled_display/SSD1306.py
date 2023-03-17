@@ -1,3 +1,9 @@
+try:
+    from board import SCL, SDA
+except:
+    pass
+import adafruit_ssd1306
+import busio
 import copy
 import os
 import sys
@@ -19,10 +25,12 @@ def _find_resource(file):
 class SSD1306(threading.Thread):
     _lock = threading.Lock()
     _stop = False
+    daemon = True
     _rows = []
     _committed_rows = []
+    _display = None
     
-    def __init__(self, width=128, height=32, fontsize=8, refresh_rate=2):
+    def __init__(self, width=128, height=32, fontsize=8, refresh_rate=1):
         super(SSD1306, self).__init__()
 
         # Preparation
@@ -36,6 +44,12 @@ class SSD1306(threading.Thread):
         self._image = Image.new('L', (self._width, self._height))
         self._draw = ImageDraw.Draw(self._image)
         self._rows = [''] * round(self._height/self._fontsize) # Only allow as many rows as can fit.
+
+        try:
+            i2c = busio.I2C(SCL, SDA)
+            self._display = adafruit_ssd1306.SSD1306_I2C(self._width, self._height, i2c)
+        except:
+            print("FAILED TO INITIALIZE DISPLAY!!!")
 
     # Clear content.
     def clear(self):
@@ -54,27 +68,30 @@ class SSD1306(threading.Thread):
             self._rows[row] = text
 
     def commit(self):
-        """
-        Send data to be shown on the display.
-        """
+        """ Send data to be shown on the display. """
         with self._lock:
             self._committed_rows = copy.copy(self._rows)
         print(self._committed_rows)
 
     def run(self):
-        """
-        Loop that updates what is shown on the display
-        """
+        """ Loop that updates what is shown on the display """
         while not self._stop:
             with self._lock:
                 rows = copy.copy(self._committed_rows)
-            # Clear image
+            # Clear display
             self._draw.rectangle((0, 0, self._width, self._height), fill=0)
-            # Draw text on image.
+            # Draw text on image
             for (r, t) in enumerate(rows):
                 self._draw.text((0, r * self._fontsize + self._y_offset), t, font=self._font, fill=200)
-            # self._image.save('test.png')
+            try:
+                # Send image to display
+                self._display.image(self._image)
+                # Show
+                self._display.show()
+            except:
+                print("FAILED TO SHOW ON DISPLAY")
             sleep(1/self._refresh_rate) # Avoid spamming the screen.
 
     def stop(self):
+        """ Stop thread when done with current iteration. """
         self._stop = True
