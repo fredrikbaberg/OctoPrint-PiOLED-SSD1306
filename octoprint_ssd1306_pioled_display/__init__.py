@@ -1,33 +1,48 @@
 # coding=utf-8
 from __future__ import absolute_import
+import logging
 
 import octoprint.plugin
+
+from octoprint.events import Events
 from .SSD1306 import SSD1306
 
 
 class Ssd1306_pioled_displayPlugin(
-    octoprint.plugin.SettingsPlugin,
-    octoprint.plugin.AssetPlugin,
-    octoprint.plugin.TemplatePlugin
+    octoprint.plugin.StartupPlugin,
+    octoprint.plugin.ShutdownPlugin,
+    # octoprint.plugin.EventHandlerPlugin,
 ):
+    
+    def __init__(self):
+        self.display = None
 
-    # ~~ SettingsPlugin mixin
+    def on_after_startup(self, *args, **kwargs):
+        self._logger.info('Prepare display')
+        self.display = SSD1306()
+        self.display.write_row(0, 'Offline')
+        self.display.start()
+        # self._printer.register_callback(self)
 
-    def get_settings_defaults(self):
-        return {
-            # put your plugin's default settings here
-        }
+    def on_shutdown(self):
+        self.display.stop()
+        # self._printer.unregister_callback(self)
+        self.display.clear()
 
-    # ~~ AssetPlugin mixin
+    # def on_event(self, event, payload):
+    #     if(event == Events.PRINTER_STATE_CHANGED):
+    #         self.display.write_row(1, '{event}, {payload}')
 
-    def get_assets(self):
-        # Define your plugin's asset files to automatically include in the
-        # core UI here.
-        return {
-            "js": ["js/ssd1306_pioled_display.js"],
-            "css": ["css/ssd1306_pioled_display.css"],
-            "less": ["less/ssd1306_pioled_display.less"]
-        }
+    # def on_printer_send_current_data(self, data, **kwargs):
+    #     self._logger.debug('on_printer_send_current_data: %s', data)
+
+    # def on_printer_add_temperature(self, data):
+    #     self._logger.debug('on_printer_add_temperature: %s', data)
+
+    def handle_connect_hook(self, *args, **kwargs):
+        self._logger.info('handle_connect')
+        self.display.write_row(0, 'Connecting')
+        self._logger.warn('Loop nr: {}'.format(self.display.loop_nr))
 
     # ~~ Softwareupdate hook
 
@@ -65,17 +80,10 @@ class Ssd1306_pioled_displayPlugin(
             }
         }
 
-
-# If you want your plugin to be registered within OctoPrint under a different name than what you defined in setup.py
-# ("OctoPrint-PluginSkeleton"), you may define that here. Same goes for the other metadata derived from setup.py that
-# can be overwritten via __plugin_xyz__ control properties. See the documentation for that.
-# __plugin_name__ = "Ssd1306_pioled_display Plugin"
-
-
 # Set the Python version your plugin is compatible with below. Recommended is Python 3 only for all new plugins.
 # OctoPrint 1.4.0 - 1.7.x run under both Python 3 and the end-of-life Python 2.
 # OctoPrint 1.8.0 onwards only supports Python 3.
-# __plugin_pythoncompat__ = ">=3,<4"  # Only Python 3
+__plugin_pythoncompat__ = ">=3,<4"  # Only Python 3
 
 def __plugin_load__():
     global __plugin_implementation__
@@ -83,5 +91,6 @@ def __plugin_load__():
 
     global __plugin_hooks__
     __plugin_hooks__ = {
-        "octoprint.plugin.softwareupdate.check_config": __plugin_implementation__.get_update_information
+        "octoprint.plugin.softwareupdate.check_config": __plugin_implementation__.get_update_information,
+        "octoprint.printer.handle_connect": __plugin_implementation__.handle_connect_hook
     }
