@@ -90,6 +90,6 @@ class SSD1306(threading.Thread):
     def log(self, message):
         """ Log message """
         if self._logger != None:
-            self._logger.log(message)
+            self._logger.info(message)
         else:
             print(message)

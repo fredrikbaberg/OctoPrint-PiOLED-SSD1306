@@ -22,7 +22,7 @@ class Ssd1306_pioled_displayPlugin(
         self.display = SSD1306(
             width=128,
             height=32,
-            refresh_rate=1,
+            refresh_rate=30,
             logger=self._logger
         )
         self.display.start()
