@@ -90,7 +90,8 @@ class SSD1306(threading.Thread):
                 # Show
                 self._display.show()
             except:
-                self.log('Failed to send to display', level=WARN)
+                # self.log('Failed to send to display', level=WARN)
+                pass
             sleep(1/self._refresh_rate)
 
     def stop(self):
