@@ -14,7 +14,7 @@ plugin_package = "octoprint_ssd1306_pioled_display"
 plugin_name = "SSD1306 PiOLED Display"
 
 # The plugin's version. Can be overwritten within OctoPrint's internal data via __plugin_version__ in the plugin module
-plugin_version = "0.1.1rc0"
+plugin_version = "0.1.1rc1"
 
 # The plugin's description. Can be overwritten within OctoPrint's internal data via __plugin_description__ in the plugin
 # module
@@ -47,7 +47,9 @@ plugin_requires = [
 # already be installed automatically if they exist. Note that if you add something here you'll also need to update
 # MANIFEST.in to match to ensure that python setup.py sdist produces a source distribution that contains all your
 # files. This is sadly due to how python's setup.py works, see also http://stackoverflow.com/a/14159430/2028598
-plugin_additional_data = []
+plugin_additional_data = [
+    'octoprint_SSD1306/PressStart2P.ttf'
+]
 
 # Any additional python packages you need to install with your plugin that are not contained in <plugin_package>.*
 plugin_additional_packages = []

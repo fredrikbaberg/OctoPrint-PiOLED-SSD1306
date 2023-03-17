@@ -1,32 +1,33 @@
 # coding=utf-8
 from __future__ import absolute_import
+
 import logging
 
 import octoprint.plugin
-
 from octoprint.events import Events
+
 from .SSD1306 import SSD1306
 
 
 class Ssd1306_pioled_displayPlugin(
     octoprint.plugin.StartupPlugin,
     octoprint.plugin.ShutdownPlugin,
-    # octoprint.plugin.EventHandlerPlugin,
 ):
     
     def __init__(self):
         self.display = None
 
-    def on_after_startup(self, *args, **kwargs):
+    def on_startup(self, *args, **kwargs):
         self._logger.info('Prepare display')
         self.display = SSD1306(
             width=128,
             height=32,
-            refresh_rate=120,
+            refresh_rate=1,
+            logger=self._logger
         )
+        self.display.start()
         self.display.write_row(0, 'Offline')
         self.display.commit()
-        self.display.start()
         # self._printer.register_callback(self)
 
     def on_shutdown(self):
@@ -38,17 +39,18 @@ class Ssd1306_pioled_displayPlugin(
     # def on_event(self, event, payload):
     #     if(event == Events.PRINTER_STATE_CHANGED):
     #         self.display.write_row(1, '{event}, {payload}')
-
     # def on_printer_send_current_data(self, data, **kwargs):
     #     self._logger.debug('on_printer_send_current_data: %s', data)
-
     # def on_printer_add_temperature(self, data):
     #     self._logger.debug('on_printer_add_temperature: %s', data)
 
     def handle_connect_hook(self, *args, **kwargs):
         self._logger.info('handle_connect')
-        self.display.write_row(0, 'Connecting')
-        self.display.commit()
+        try:
+            self.display.write_row(0, 'Connecting')
+            self.display.commit()
+        except:
+            self._logger.error("Could not write to display. {}".format(self.display))
 
     # ~~ Softwareupdate hook
 
