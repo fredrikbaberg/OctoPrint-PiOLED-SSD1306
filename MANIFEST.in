@@ -1,0 +1,4 @@
+include README.md
+recursive-include octoprint_ssd1306_pioled_display/templates *
+recursive-include octoprint_ssd1306_pioled_display/translations *
+recursive-include octoprint_ssd1306_pioled_display/static *
