@@ -83,9 +83,9 @@ class SSD1306(threading.Thread):
             # Clear display
             self._draw.rectangle((0, 0, self._width, self._height), fill=0)
             # Draw text on image
-            for (r, t) in enumerate(rows):
+            for (r, text) in enumerate(rows):
                 self._draw.text(
-                    (0, r * self._fontsize + self._y_offset), t, font=self._font, fill=200)
+                    (0, r * self._fontsize + self._y_offset), text, font=self._font, fill=200)
             try:
                 self._display.image(self._image)  # Send image to display
                 self._display.show()  # Show

@@ -47,8 +47,7 @@ class Ssd1306_pioled_displayPlugin(
 
     def on_event(self, event, payload, *args, **kwargs):
         """ Display printer status events on the first line """
-        self._logger.info('on_event: %s, %s', event, payload)
-
+        self._logger.debug('on_event: %s, %s', event, payload)
         if event == Events.ERROR:
             try:
                 self.display.write_row(0, 'Error! {}'.format(payload['error']))
@@ -58,47 +57,29 @@ class Ssd1306_pioled_displayPlugin(
         elif event == Events.PRINTER_STATE_CHANGED:
             try:
                 self.display.write_row(0, payload['state_string'])
-                if payload['state_id'] == 'OFFLINE':
-                    # If the printer is offline, clear printer and job messages
-                    self.display.clear_rows(start=1, end=2)
+                if payload['state_id'] == 'OFFLINE':  # Clear printer/job messages if offline
+                    self.display.clear_rows(start=1)
                 self.display.commit()
             except:
                 self._logger.debug('Display currently unavailable.')
 
-    def on_printer_send_current_data(self, data, **kwargs):
-        """ Display print progress on lines 1-? """
-        self._logger.debug('on_printer_send_current_data: %s', data)
-        completion = data['progress']['completion']
-
-        match completion:
-            case None:
-                self.display.write_row(1,'')
-
-        # if completion is None:
-        #     # Job is complete or no job is started.
-        #     self.display.clear_rows(1)
-        # else:
-        #     self.display.write_row(1, '{}% Completed'.format(int(completion)))
-        #     # Show elapsed time and remaining time
-        #     elapsed = data['progress']['printTime']
-        #     self.display.write_row(
-        #         2,
-        #         '{} Elapsed'.format(format_seconds(elapsed))
-        #     )
-
-        #     remaining = data['progress']['printTimeLeft']
-        #     if remaining is not None:
-        #         self.display.write_row(3, '{} Left'.format(
-        #             self._format_seconds(remaining)))
-        #     else:
-        #         self.display.clear_rows(3)
-
-        self.display.commit()
+    def protocol_gcode_sent_hook(self, comm_instance, phase, cmd, cmd_type, gcode, *args, **kwargs):
+        """ Listen for gcode commands, specifically M117 (Set LCD message) on the second line """
+        if (gcode is not None) and (gcode == 'M117'):
+            self._logger.info('Intercepted M117 gcode: {}'.format(cmd))
+            lines = textwrap.fill(
+                text=' '.join(cmd.split(' ')[1:]),
+                width=16,  # Each char. is 8 px. wide
+                max_lines=1  # No. of available lines
+            ).split('\n')
+            self._logger.info('Split message: "%s"', lines)
+            for i in range(0, len(lines)):
+                self.display.write_row(1+i, lines[i] if i < len(lines) else '')
+            self.display.commit()
 
     def on_printer_add_temperature(self, data):
-        """ Display printer temperatures """
+        """ Display printer temperatures on the third line """
         self._logger.debug('on_printer_add_temperature: %s', data)
-
         msg = []
         for k in ['bed', 'tool0', 'tool1', 'tool2']:
             if k in data.keys():
@@ -110,25 +91,20 @@ class Ssd1306_pioled_displayPlugin(
             self._logger.info(
                 'Failed to send temperature(S) to display')
 
-    def protocol_gcode_sent_hook(self, comm_instance, phase, cmd, cmd_type, gcode, *args, **kwargs):
-        """ Listen for gcode commands, specifically M117 (Set LCD message) """
-        if (gcode is not None) and (gcode == 'M117'):
-            self._logger.info('Intercepted M117 gcode: {}'.format(cmd))
-            max_chars_per_line = 16  # Each char. is 8 px. wide
-            max_lines = 2  # Set number of available lines
-            start_line = 1
-            lines = textwrap.fill(
-                text=' '.join(cmd.split(' ')[1:]),
-                width=max_chars_per_line,
-                max_lines=max_lines
-            ).split('\n')
-            self._logger.info('Split message: "%s"', lines)
-            for i in range(0, max_lines):
-                self.display.write_row(
-                    start_line + i,
-                    lines[i] if i < len(lines) else ''
-                )
-            self.display.commit()
+    def on_printer_send_current_data(self, data, **kwargs):
+        """ Display print progress on fourth line """
+        self._logger.debug('on_printer_send_current_data: %s', data)
+        completion = data['progress']['completion']
+
+        if completion is None:
+            self.display.write_row(3, '')  # Job complete or no job started.
+        else:
+            self.display.write_row(3, '{}% {}/{}'.format(
+                int(completion),
+                format_seconds(data['progress']['printTime']),
+                format_seconds(data['progress']['printTimeLeft']),
+            ))
+        self.display.commit()
 
     # ~~ Softwareupdate hook
 
