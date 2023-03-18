@@ -35,7 +35,7 @@ class SSD1306(threading.Thread):
         # self._font = ImageFont.load_default()
         self._font = ImageFont.truetype(find_resource(
             'font/PressStart2P.ttf'), self._fontsize)
-        self._image = Image.new('L', (self._width, self._height))
+        self._image = Image.new('1', (self._width, self._height))
         self._draw = ImageDraw.Draw(self._image)
         # Only allow as many rows as can fit on screen.
         self._rows = [''] * round(self._height/self._fontsize)
@@ -44,6 +44,7 @@ class SSD1306(threading.Thread):
             i2c = busio.I2C(SCL, SDA)
             self._display = adafruit_ssd1306.SSD1306_I2C(
                 self._width, self._height, i2c)
+            self.log('Display initialized', level=DEBUG)
         except:
             self.log('Failed to initialize display', level=WARN)
 
@@ -57,7 +58,7 @@ class SSD1306(threading.Thread):
                 self._rows[i] = ''
         else:
             self.log('Indices out of range for clear_rows: [{}, {}] but should be in [{}, {}]'.format(
-                start, _end, 0, len(self._rows)-1))
+                start, _end, 0, len(self._rows)-1), level=WARN)
 
     # Write content to row.
     def write_row(self, row, text):
@@ -65,13 +66,14 @@ class SSD1306(threading.Thread):
         if (row < len(self._rows)):
             self._rows[row] = text
         else:
-            self.log('Row index too large, {} > {}'.format(row, len(self._rows)), level=WARN)
+            self.log('Row index too large, {} > {}'.format(
+                row, len(self._rows)), level=WARN)
 
     def commit(self):
         """ Send data to be shown on the display. """
         with self._lock:
             self._committed_rows = copy.copy(self._rows)
-        self.log(self._committed_rows)
+        self.log(self._committed_rows, level=DEBUG)
 
     def run(self):
         """ Loop that update what is shown on the display """
@@ -85,13 +87,10 @@ class SSD1306(threading.Thread):
                 self._draw.text(
                     (0, r * self._fontsize + self._y_offset), t, font=self._font, fill=200)
             try:
-                # Send image to display
-                self._display.image(self._image)
-                # Show
-                self._display.show()
+                self._display.image(self._image)  # Send image to display
+                self._display.show()  # Show
             except:
-                # self.log('Failed to send to display', level=WARN)
-                pass
+                self.log('Failed to send to display', level=DEBUG)
             sleep(1/self._refresh_rate)
 
     def stop(self):
@@ -109,6 +108,8 @@ class SSD1306(threading.Thread):
         if self._logger != None:
             if (level is WARN):
                 self._logger.warn(message)
+            elif level is DEBUG:
+                self._logger.debug(message)
             else:
                 self._logger.info(message)
         else:

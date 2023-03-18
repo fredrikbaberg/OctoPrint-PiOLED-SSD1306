@@ -8,7 +8,7 @@ import octoprint.plugin
 from octoprint.events import Events
 
 from octoprint_ssd1306_pioled_display.helpers import format_seconds, format_temp
-# from octoprint.printer import PrinterCallback
+from octoprint.printer import PrinterCallback
 
 from .SSD1306 import SSD1306
 
