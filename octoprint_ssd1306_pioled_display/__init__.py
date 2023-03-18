@@ -60,7 +60,7 @@ class Ssd1306_pioled_displayPlugin(
                 self.display.write_row(0, payload['state_string'])
                 if payload['state_id'] == 'OFFLINE':
                     # If the printer is offline, clear printer and job messages
-                    self.display.clear_rows(1)
+                    self.display.clear_rows(start=1, end=2)
                 self.display.commit()
             except:
                 self._logger.debug('Display currently unavailable.')
@@ -69,6 +69,10 @@ class Ssd1306_pioled_displayPlugin(
         """ Display print progress on lines 1-? """
         self._logger.debug('on_printer_send_current_data: %s', data)
         completion = data['progress']['completion']
+
+        match completion:
+            case None:
+                self.display.write_row(1,'')
 
         # if completion is None:
         #     # Job is complete or no job is started.
@@ -89,7 +93,7 @@ class Ssd1306_pioled_displayPlugin(
         #     else:
         #         self.display.clear_rows(3)
 
-        # self.display.commit()
+        self.display.commit()
 
     def on_printer_add_temperature(self, data):
         """ Display printer temperatures """
