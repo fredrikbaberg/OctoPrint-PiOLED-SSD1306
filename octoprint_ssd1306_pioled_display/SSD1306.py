@@ -35,7 +35,7 @@ class SSD1306(threading.Thread):
         # self._font = ImageFont.load_default()
         self._font = ImageFont.truetype(find_resource(
             'font/PressStart2P.ttf'), self._fontsize)
-        self._image = Image.new('1', (self._width, self._height))
+        self._image = Image.new('L', (self._width, self._height))
         self._draw = ImageDraw.Draw(self._image)
         # Only allow as many rows as can fit on screen.
         self._rows = [''] * round(self._height/self._fontsize)

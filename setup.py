@@ -14,7 +14,7 @@ plugin_package = "octoprint_ssd1306_pioled_display"
 plugin_name = "SSD1306 PiOLED Display"
 
 # The plugin's version. Can be overwritten within OctoPrint's internal data via __plugin_version__ in the plugin module
-plugin_version = "0.1.1rc4"
+plugin_version = "0.1.1rc5"
 
 # The plugin's description. Can be overwritten within OctoPrint's internal data via __plugin_description__ in the plugin
 # module
