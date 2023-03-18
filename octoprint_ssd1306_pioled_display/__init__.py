@@ -50,14 +50,20 @@ class Ssd1306_pioled_displayPlugin(
         self._logger.info('on_event: %s, %s', event, payload)
 
         if event == Events.ERROR:
-            self.display.write_row(0, 'Error! {}'.format(payload['error']))
-            self.display.commit()
+            try:
+                self.display.write_row(0, 'Error! {}'.format(payload['error']))
+                self.display.commit()
+            except:
+                self._logger.debug('Display currently unavailable.')
         elif event == Events.PRINTER_STATE_CHANGED:
-            self.display.write_row(0, payload['state_string'])
-            if payload['state_id'] == 'OFFLINE':
-                # If the printer is offline, clear printer and job messages
-                self.display.clear_rows(1)
-            self.display.commit()
+            try:
+                self.display.write_row(0, payload['state_string'])
+                if payload['state_id'] == 'OFFLINE':
+                    # If the printer is offline, clear printer and job messages
+                    self.display.clear_rows(1)
+                self.display.commit()
+            except:
+                self._logger.debug('Display currently unavailable.')
 
     def on_printer_send_current_data(self, data, **kwargs):
         """ Display print progress on lines 1-? """
@@ -89,24 +95,16 @@ class Ssd1306_pioled_displayPlugin(
         """ Display printer temperatures """
         self._logger.debug('on_printer_add_temperature: %s', data)
 
-        msg0 = '{} {}'.format(
-            format_temp('bed', data['bed']),
-            format_temp('tool0', data['tool0'])
-        )
-
-        # self._logger.info(msg0)
-
-        if 'tool1' in data:
-            msg1 = format_temp('tool1', data['tool1'])
-            if 'tool2' in data:
-                msg1 += ' ' + format_temp('tool2', data['tool2'])
-            self.display.write_row(1, msg0)
-            self.display.write_row(2, msg1)
-        else:
-            self.display.clear_rows(1, 2)
-            self.display.write_row(3, msg0)
-
-        self.display.commit()
+        msg = []
+        for k in ['bed', 'tool0', 'tool1', 'tool2']:
+            if k in data.keys():
+                msg.append(format_temp(k, data[k]))
+        try:
+            self.display.write_row(2, ' '.join(msg))
+            self.display.commit()
+        except:
+            self._logger.info(
+                'Failed to send temperature(S) to display')
 
     def protocol_gcode_sent_hook(self, comm_instance, phase, cmd, cmd_type, gcode, *args, **kwargs):
         """ Listen for gcode commands, specifically M117 (Set LCD message) """

@@ -20,6 +20,10 @@ def format_seconds(seconds):
 
 
 def format_temp(tool, temp):
+    """
+    Format temperature for printing as string.
+    TODO: Clean this up, or make the output more readable.
+    """
     tool_txt = tool[0].upper()
     if tool[-1].isdigit():
         tool_txt += tool[-1]
